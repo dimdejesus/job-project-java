@@ -39,8 +39,12 @@ public class Main {
 
 		Job job = new Job(jobNumber, jobTitle, jobPoster, jobPosterAddress, jobPosterDate, jobExperienceLevel, jobType, jobRequiredSkils.split(","), jobSalary, jobDescription);
 
-		job.addJob();
-
 		scanner.close();
+
+		if(action.equals("1")) {
+			job.addJob();
+		} else {
+			job.updateJob(jobNumber, jobTitle, jobPoster, jobPosterAddress, jobPosterDate, jobExperienceLevel, jobType, args, jobSalary, jobDescription);
+		}
 	}
 }

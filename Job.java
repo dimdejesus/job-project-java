@@ -94,9 +94,9 @@ public class Job {
 
 			if(jobData == "") return false;
 
-			String[] job = jobData.split(",");
+			String[] job = jobData.split("\\|");
 
-			double salaryIncrease = (Integer.parseInt(job[8]) - salary) / salary;
+			double salaryIncrease = (Double.parseDouble(job[8]) - salary) / salary;
 
 			if((salaryIncrease < 0.2 || salaryIncrease > 0.4) && experienceLevel != "Junior") return false;
 			else if(salaryIncrease > 0.1 && experienceLevel == "Junior") return false;
@@ -114,7 +114,7 @@ public class Job {
 	{
 		// VALIDATE JOB NUMBER
 		// Pattern that accepts first 5 characters (1 to 5) 6th to 8th as capital letter A to Z and a special character
-		String pattern = "[1-5]{5}[A-Z]{3}[!@#$%^&*]";
+		String pattern = "[1-5]{5}[A-Z]{3}[!@#$%^&*_]";
 		boolean jobNumValidate = this.validateRegex(pattern, jobNum);
 		// Perform a condition if the pattern is met
 		if(!jobNumValidate) return false;
@@ -125,9 +125,9 @@ public class Job {
 
 		try {
 			dateParsed = dateInputFormat.parse(date);
-				if (!date.equals(dateInputFormat.format(dateParsed))) {
-					dateParsed = null;
-				}
+			if (!date.equals(dateInputFormat.format(dateParsed))) {
+				dateParsed = null;
+			}
 		} catch (ParseException e) {
 			dateParsed = null;
 			e.printStackTrace();
@@ -142,16 +142,16 @@ public class Job {
 		if(!addressValidate) return false;
 
 		// VALIDATE EXPERIENCE LEVEL SALARY
-		if(!(salary > 100000) || experienceLevel != "Senior" && experienceLevel != "Executive") {
+		if(salary > 100000 || (experienceLevel == "Senior" && experienceLevel == "Executive")) {
 			return false;
-		} else if (!(salary > 40000 && salary < 70000) || experienceLevel != "Junior") {
+		} else if (!(salary > 40000 && salary < 70000) && experienceLevel == "Junior") {
 			return false;
-		} else if(!(salary > 70000 && salary < 100000) || experienceLevel != "Medium") {
+		} else if(!(salary > 70000 && salary < 100000) && experienceLevel == "Medium") {
 			return false;
 		}
 
 		// VALIDATE TYPE
-		if(type == "Part-Time" &&  (experienceLevel == "Senior" || experienceLevel == "Executive")) {
+		if(type == "Part-Time" && (experienceLevel == "Senior" || experienceLevel == "Executive")) {
 			return false;
 		}
 
@@ -190,8 +190,8 @@ public class Job {
 		try (BufferedReader reader = new BufferedReader(new FileReader("job.txt"))) {
 			String line;
 			while((line = reader.readLine()) != null) {
-				String[] jobData = line.split(",");
-				if(jobData[0] == jobNum) return String.join(",", jobData);
+				String[] jobData = line.split("\\|");
+				if(jobData[0].equals(jobNum)) return String.join("|", jobData);
 			}
 			return "";
 		} catch (IOException e) {
@@ -205,19 +205,54 @@ public class Job {
 		try {
 			File originalFile = new File("job.txt");
 			BufferedReader reader = new BufferedReader(new FileReader(originalFile));
+			StringBuilder contents = new StringBuilder();
 
 			File tempFile = new File("temp.txt");
-      BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
+      		BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
 
 			String line;
 			while((line = reader.readLine()) != null) {
-				String[] jobData = line.split(",");
-				if(jobData[0] != jobNum) {
-					this.printTxt(jobNum, title, posterName, posterAddress, date, experienceLevel, type, skills, salary, description);
-				} else {
-					writer.write(line);
-				}
+				contents.append(line).append(System.lineSeparator());
+				/*  */
 			}
+
+			reader.close();
+
+			String[] lines = contents.toString().split(System.lineSeparator());
+			for (int i = 0; i < lines.length; i++) {
+				String[] jobData = lines[i].split("\\|");
+				if(jobData[0].equals(jobNum)) {
+					writer.write(String.format(
+						"%s|%s|%s|%s|%s|%s|%s|%s|%.2f|%s",
+						jobNum,
+						title,
+						posterName,
+						posterAddress,
+						date,
+						experienceLevel,
+						type,
+						String.join(",", skills),
+						salary,
+						description
+					));
+				} else {
+					writer.write(lines[i]);
+				}
+				writer.newLine();
+            }
+
+			writer.close();
+
+			if (originalFile.delete()) {
+                if (tempFile.renameTo(originalFile)) {
+                    System.out.println("Line inserted successfully.");
+                } else {
+                    System.out.println("Failed to rename the new file.");
+                }
+            } else {
+                System.out.println("Failed to delete the original file.");
+            }
+
 			return true;
 		} catch (IOException e) {
 			System.out.println("ERROR!");
@@ -241,7 +276,7 @@ public class Job {
 				String.join(",", skills),
 				salary,
 				description
-			));
+			) + "\n");
 
 			System.out.println("Successfully written to text file!");
 			return true;
